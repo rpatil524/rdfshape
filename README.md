@@ -1,86 +1,77 @@
 # RDFShape
 
-RDF playground. This repository contains the server part of the RDFShape web
-app. The server has been implemented in Scala using
+RDFShape is web API for semantic data analysis and validation implemented in Scala using
 the [http4s](https://http4s.org/) library.
 
-[![Continuous Integration](https://github.com/weso/rdfshape/actions/workflows/ci.yml/badge.svg)](https://github.com/weso/rdfshape/actions/workflows/ci.yml)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/2ad10ec42b6a4bb389aeb114fe192f21)](https://www.codacy.com/gh/weso/rdfshape?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=weso/rdfshape&amp;utm_campaign=Badge_Grade)
+This repository contains the backend part of RDFShape and acts as a queryable API to be consumed by clients. To learn
+more about our public client, see its [GitHub repository](https://github.com/weso/rdfshape-client)
+or [try it](https://rdfshape.weso.es).
 
-# More info
+[![Continuous Integration](https://github.com/weso/rdfshape-api/actions/workflows/ci.yml/badge.svg)](https://github.com/weso/rdfshape-api/actions/workflows/ci.yml)
+[![Docker build](https://github.com/weso/rdfshape-api/actions/workflows/publish_docker.yml/badge.svg)](https://github.com/weso/rdfshape-api/actions/workflows/publish_docker.yml)
 
-* The client part of RDFShape has been separated to
-  a [React app](https://github.com/weso/rdfshape-client).
-* Background info about validating
-  RDF: [Validating RDF data book](http://book.validatingrdf.com)
-* [How-to](https://github.com/labra/rdfshape/wiki/Tutorial) explains how to use
-  RDFShape to validate RDF
+[![Codacy](https://api.codacy.com/project/badge/Grade/2ad10ec42b6a4bb389aeb114fe192f21)](https://www.codacy.com/gh/weso/rdfshape-api?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=weso/rdfshape&amp;utm_campaign=Badge_Grade)
 
-# Deployed versions of RDFShape
+# Deployed versions of RDFShape API
 
-RDFShape is already deployed [here](http://rdfshape.weso.es).
+RDFShape is already deployed [here](https://api.rdfshape.weso.es/api).
 
-# Installation and Local Deployment
+# Quick reference
 
-## Requirements
+- [Base repository](https://github.com/weso/rdfshape)
+- [Wiki](https://github.com/weso/rdfshape-api/wiki)
+- [Webpage](https://www.weso.es/rdfshape-api/)
 
-* RDFShape server requires [SBT](https://www.scala-sbt.org/) to be built
+---
 
-## Deploy at local machine
+# Deployment and Usage
 
-* Clone the [github repository](https://github.com/labra/rdfshape)
+Please, refer to this project's [wiki](https://github.com/weso/rdfshape-api/wiki)
+or [webpage](https://www.weso.es/rdfshape-api/) for detailed information related to:
 
-* Go to directory where RDFShape source code is located and execute `sbt run`
+- Quickstarting the API (via SBT / Docker)
+- Using the API with simple examples
+- Further documentation and resources
 
-* After some time downloading and compiling uri(
-  the source code it will start the application, which can be accessed
-  at: [localhost:8080](http://localhost:8080)
+# Publishing to OSS-Sonatype
 
-* To use a different port run `sbt "run --server --port <PortNumber>"`
+This project uses the [sbt-ci-release](https://github.com/olafurpg/sbt-ci-release) plugin for publishing
+to [OSS Sonatype](https://oss.sonatype.org/).
 
-## Deploy with Docker
+### SNAPSHOT Releases
 
-* Use the provided Dockerfile to build rdfshape or pull from [Docker Hub](https://hub.docker.com/r/wesogroup/rdfshape-api).
-* When building the Docker image, you must provide the following arguments
-  via `--build-arg`:
-    * **GITHUB_TOKEN**:
-        - A valid GitHub token to download WESO project dependencies from Github
-          packages. This is required when manually building the image.
-        - Images available
-          in [Docker Hub](https://hub.docker.com/r/wesogroup/rdfshape-api) have
-          already been built using a read-only token for downloading the
-          dependencies.
+Open a PR and merge it to watch the CI release a `-SNAPSHOT` version
 
-* When running a container, you may provide the following environment variables
-  via `--env`:
-    - **PORT**: Port where the API is exposed inside the container. Default is 80.
+### Full Library Releases
+
+1. Push a tag and watch the CI do a regular release
+2. `git tag -a v0.1.0 -m "v0.1.0"`
+3. `git push origin v0.1.0`
+   _Note that the tag version MUST start with v._
 
 # Dependencies
 
 RDFShape server has been implemented in Scala using the following libraries:
 
-* [SHaclEX](https://github.com/labra/shaclex): a Scala implementation of ShEx
-  and SHACL.
-* [http4s](https://http4s.org/): a purely functional library for http.
-* [cats](https://typelevel.org/cats/): a library for functional programming in
-  Scala.
-* [UMLShaclex](https://github.com/labra/shaclex): contains the visualization
-  code that converts schemas to UML diagrams
-* [SRDF](http://www.weso.es/srdf/): is the library used to handle RDF. It is a
-  simple interface with 2 implementations, one
-  in [Apache Jena](https://jena.apache.org/), and the other
-  in [RDF4j](https://rdf4j.org/).
-* [Any23](https://any23.apache.org/): is used by RDFShape to convert HTML files
-  in RDFa and Microdata to RDF.
-* [Topbraid SHACL API](https://github.com/TopQuadrant/shacl): is used to add
-  another SHACL engine apart of the SHaclEX and Apache Jena SHACL engines.
+- [SHaclEX](https://github.com/labra/shaclex): a Scala implementation of ShEx and SHACL.
+- [http4s](https://http4s.org/): a purely functional library for http.
+- [cats](https://typelevel.org/cats/): a library for functional programming in Scala.
+- [Logback](http://logback.qos.ch/) with [Scala Logging](https://github.com/lightbend/scala-logging): logging framework.
+- [scallop](https://github.com/scallop/scallop): a simple command-line arguments parsing library for Scala.
+- [UMLShaclex](https://github.com/labra/shaclex): contains the visualization code that converts schemas to UML diagrams.
+- [SRDF](http://www.weso.es/srdf/): is the library used to handle RDF. It is a simple interface with 2 implementations,
+  one in [Apache Jena](https://jena.apache.org/), and the other in [RDF4j](https://rdf4j.org/).
+- [Any23](https://any23.apache.org/): is used by RDFShape to convert HTML files in RDFa and Microdata to RDF.
+- [Topbraid SHACL API](https://github.com/TopQuadrant/shacl): is used to add another SHACL engine apart of the SHaclEX
+  and Apache Jena SHACL engines.
 
 # Contribution and issues
 
-Contributions are greatly appreciated. Please fork this repository and open a
-pull request to add more features or submit issues:
+We really appreciate contributions. Please fork this repository and open a pull request to add more features or submit
+issues:
 
-* [Issues about RDFShape online demo](https://github.com/labra/rdfshape/issues)
+* [Issues about RDFShape API](https://github.com/weso/rdfshape-api/issues)
+* [Issues about RDFShape client](https://github.com/weso/rdfshape-client/issues)
 * [Issues about SHACLex validation library](https://github.com/labra/shaclex/issues)
 
 <a href="https://github.com/weso/rdfshape/graphs/contributors">

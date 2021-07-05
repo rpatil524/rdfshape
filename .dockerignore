@@ -1,6 +1,5 @@
 Dockerfile
 .dockerignore
-.env
 
 target
 logs
@@ -21,3 +20,11 @@ notes
 .directory
 .DS_Store
 
+.codacy.yaml
+.zenodo.json
+.scalafmt.conf
+*.md
+LICENSE
+Procfile
+
+website

@@ -1,19 +1,11 @@
 ## Build environment.
+# Java 11, Scala 2.12.13, SBT 1.5.0 included.
+FROM hseeberger/scala-sbt:11.0.11-oraclelinux8_1.5.4_2.13.6 as build
 # Build application inside /app
-FROM openjdk:12 as build
 WORKDIR /app
 
-# Install git, sbt, required
-RUN yum update -y -q && \
-    yum install git -y -q
-
-RUN curl -s https://bintray.com/sbt/rpm/rpm | \
-    tee /etc/yum.repos.d/bintray-sbt-rpm.repo && \
-    yum install sbt -y -q
-
-# ARGs - Override with: --build-arg [ARGUMENT]=[VALUE]
-# Github token needed to download weso packages at build time.
-ARG GITHUB_TOKEN=""
+# Install git
+RUN microdnf update -y && microdnf install git -y --nodocs --refresh
 
 # Copy all application files
 COPY . ./
@@ -21,28 +13,37 @@ COPY . ./
 RUN ["sbt", "Universal / packageBin"]
 
 ## Prod environment.
-FROM openjdk:12 as prod
+FROM adoptopenjdk/openjdk12:jre-12.0.2_10-ubuntu as prod
+LABEL org.opencontainers.image.source="https://github.com/weso/rdfshape-api"
 WORKDIR /app
 
 # Copy zip with universal executable
 COPY --from=build /app/target/universal/rdfshape.zip .
 
 # Download required programs dependencies. Unzip binaries.
-RUN yum update -y -q && \
-    yum install graphviz -y -q && \
-    yum install unzip -y -q && \
-    unzip -q rdfshape.zip
+RUN apt -qq -y update && apt -qq -y upgrade && \
+    apt -qq -y install unzip graphviz && \
+    unzip -q rdfshape.zip && \
+    rm rdfshape.zip
 
 # Add rdfshape to path
-ENV PATH /app/rdfshape/bin:$PATH
+ENV PATH="/app/rdfshape/bin:${PATH}"
 
 # Run
 # Port for the app to run
-ENV PORT=80
+ENV PORT=8080
 EXPOSE $PORT
 # Non-priviledged user to run the app
-RUN groupadd -r rdfshape && useradd -r -s /bin/false -g rdfshape rdfshape
+RUN addgroup --system rdfshape && adduser --system --shell /bin/false --ingroup rdfshape rdfshape
 RUN chown -R rdfshape:rdfshape /app
 USER rdfshape
 
-CMD ["rdfshape", "--server", "-Dhttp.port=$PORT", "-Djdk.tls.client.protocols=TLSv1.2"]
+# JVM settings to allow connection to DB
+ENV SSL_FIX="-Djdk.tls.client.protocols=TLSv1.2"
+
+# Define commands to launch RDFShape
+ENV HTTPS_CLI_ARG="--https"
+ENV RDFSHAPE_CMD_HTTP="rdfshape $SSL_FIX --port $PORT"
+ENV RDFSHAPE_CMD_HTTPS="$RDFSHAPE_CMD_HTTP $HTTPS_CLI_ARG"
+
+CMD bash -c "if [[ ! -z '$USE_HTTPS' ]]; then $RDFSHAPE_CMD_HTTPS; else $RDFSHAPE_CMD_HTTP; fi"

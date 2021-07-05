@@ -1,175 +1,281 @@
+import scala.language.postfixOps
+// Centralized control of the application's core settings
+// See version in version.sbt
+Global / name := "RDFShape API"    // Friendly app name
+Global / packageName := "rdfshape" // Output filename of "sbt-native-packager" tasks
+Global / cancelable := true
+Global / apiURL := Some(url("https://github.com/weso/rdfshape-api"))
+Global / scalaVersion := scala213
+
 lazy val scala212               = "2.12.13"
-lazy val scala213               = "2.13.5"
-lazy val supportedScalaVersions = List(scala213, scala212)
+lazy val scala213               = "2.13.6"
+lazy val supportedScalaVersions = List(scala213)
 
-val Java11 = "adopt@1.11"
+// Lint-excluded keys
+Global / excludeLintKeys ++= Set(
+  name,
+  ThisBuild / maintainer,
+  rdfshape / reStartArgs
+)
 
-lazy val utilsVersion      = "0.1.82" // for utilsTest
-lazy val umlShaclexVersion = "0.0.81"
-lazy val shexsVersion      = "0.1.86"
+/* ------------------------------------------------------------------------- */
 
-lazy val any23Version = "2.2"
-lazy val rdf4jVersion = "2.2.4"
+/* GITHUB INTEGRATION settings */
 
-// Dependency versions
-lazy val catsVersion         = "2.5.0"
-lazy val commonsTextVersion  = "1.7"
-lazy val circeVersion        = "0.14.0-M5"
-lazy val graphvizJavaVersion = "0.5.2"
-lazy val http4sVersion       = "1.0.0-M21"
-// lazy val jgraphtVersion        = "1.3.1"
-// lazy val kindProjectorVersion  = "0.11.3"
-lazy val logbackVersion     = "1.2.3"
-lazy val loggingVersion     = "3.9.2"
-lazy val munitVersion       = "0.7.23"
-lazy val munitEffectVersion = "1.0.1"
-lazy val plantumlVersion    = "1.2017.12"
-// lazy val scalacheckVersion     = "1.13.5"
-// lazy val scalaGraphVersion     = "1.11.5"
-// lazy val scalajVersion         = "2.4.2"
-lazy val scalatagsVersion = "0.7.0"
-// lazy val scallopVersion        = "3.3.1"
-// lazy val seleniumVersion       = "2.45.0"
-// lazy val silencerVersion       = "1.7.3"
-// lazy val typesafeConfigVersion = "1.3.4"
-lazy val mongodbVersion = "4.1.1"
+// "sbt-github-actions" plugin settings
+val JavaCIVersion  = "adopt@1.11"
+val ScalaCIVersion = "2.13.6"
+ThisBuild / githubWorkflowJavaVersions := Seq(JavaCIVersion)
+ThisBuild / githubWorkflowScalaVersions := Seq(ScalaCIVersion)
 
-// WebJars
-lazy val jqueryVersion    = "3.4.1"
-lazy val bootstrapVersion = "4.3.1"
+/* ------------------------------------------------------------------------- */
 
-// Scalaj
-lazy val scalajVersion = "2.4.2"
+/* GROUPED SETTINGS */
+// Shared dependencies for all modules.
+lazy val sharedDependencies = Seq()
 
-// Parsing utils
-lazy val playVersion = "2.9.0"
+// Shared packaging settings for all modules.
+lazy val packagingSettings = Seq(
+  Compile / mainClass := Some("es.weso.rdfshape.Main"),
+  assembly / mainClass := Some("es.weso.rdfshape.Main"),
+  assembly / test := {},
+  assembly / assemblyJarName := s"${(Global / packageName).value}.jar",
+  // Output filename on "sbt-native-packager" tasks
+  Universal / packageName := (Global / packageName).value
+)
 
-// Compiler plugin dependency versions
-lazy val scalaMacrosVersion = "2.1.1"
+// Shared compilation settings for all modules.
+// https://docs.scala-lang.org/overviews/compiler-options/index.html
+lazy val compilationSettings = Seq(
+  Compile / scalacOptions ++= Seq(
+    "-deprecation",
+    "-explaintypes",
+    "-feature",
+    "-language:_",
+    "-unchecked",
+    "-Yrangepos"
+  )
+)
 
-// Dependency modules
-lazy val catsCore   = "org.typelevel" %% "cats-core"   % catsVersion
-lazy val catsKernel = "org.typelevel" %% "cats-kernel" % catsVersion
-/* lazy val catsMacros = "org.typelevel" %% "cats-macros" % catsVersion */
-lazy val circeCore    = "io.circe"   %% "circe-core"    % circeVersion
-lazy val circeGeneric = "io.circe"   %% "circe-generic" % circeVersion
-lazy val circeParser  = "io.circe"   %% "circe-parser"  % circeVersion
-lazy val graphvizJava = "guru.nidi"   % "graphviz-java" % graphvizJavaVersion
-lazy val http4sDsl    = "org.http4s" %% "http4s-dsl"    % http4sVersion
-lazy val http4sBlazeServer =
-  "org.http4s" %% "http4s-blaze-server" % http4sVersion
-lazy val http4sBlazeClient =
-  "org.http4s" %% "http4s-blaze-client" % http4sVersion
-lazy val http4sEmberClient =
-  "org.http4s" %% "http4s-ember-client" % http4sVersion
-lazy val http4sCirce    = "org.http4s"    %% "http4s-circe"    % http4sVersion
-lazy val http4sTwirl    = "org.http4s"    %% "http4s-twirl"    % http4sVersion
-lazy val logbackClassic = "ch.qos.logback" % "logback-classic" % logbackVersion
-lazy val munit          = "org.scalameta" %% "munit"           % munitVersion
-lazy val munitEffect =
-  "org.typelevel" %% "munit-cats-effect-3" % munitEffectVersion
-lazy val plantuml = "net.sourceforge.plantuml" % "plantuml" % plantumlVersion
-lazy val scalaLogging =
-  "com.typesafe.scala-logging" %% "scala-logging" % loggingVersion
-/* lazy val scallop = "org.rogach" %% "scallop" % scallopVersion */
-/* lazy val scalaj = "org.scalaj" %% "scalaj-http" % scalajVersion */
-lazy val scalatags = "com.lihaoyi" %% "scalatags" % scalatagsVersion
+// Scaladoc settings for docs generation. Run task "doc" or "server / doc".
+// https://www.scala-sbt.org/1.x/docs/Howto-Scaladoc.html
+/* https://github.com/scala/scala/blob/2.13.x/src/scaladoc/scala/tools/nsc/doc/Settings.scala */
+lazy val scaladocSettings: Seq[Def.Setting[_]] = Seq(
+  // Generate documentation on a separated "docs" folder
+  Compile / doc / target := baseDirectory.value / "target" / "scaladoc",
+  Compile / doc / scalacOptions ++= Seq(
+    // Base source path
+    "-sourcepath",
+    (LocalRootProject / baseDirectory).value.getAbsolutePath,
+    // Link to GitHub source
+    "-doc-source-url",
+    scmInfo.value.get.browseUrl + "/tree/master€{FILE_PATH}.scala",
+    // Page title
+    "-doc-title",
+    "RDFShape API - Docs",
+    // Docs version
+    "-doc-version",
+    version.value,
+    // Docs footer
+    "-doc-footer",
+    "WESO Research Group - University of Oviedo",
+    // Skip unnecessary source
+    "-skip-packages",
+    "org:buildinfo",
+    // Other settings
+    "-diagrams",
+    "-implicits",
+    "-private"
+  ),
+  // Need to generate docs to publish to oss
+  Compile / packageDoc / publishArtifact := true
+)
 
-lazy val umlShaclex  = "es.weso" %% "umlshaclex"  % umlShaclexVersion
-lazy val utilsTest   = "es.weso" %% "utilstest"   % utilsVersion
-lazy val wikibaserdf = "es.weso" %% "wikibaserdf" % shexsVersion
+// Setup Mdoc + Docusaurus settings
+lazy val mdocSettings = Seq(
+  mdocVariables := Map(
+    "APP_NAME"               -> (Global / name).value,
+    "INNER_NAME"             -> name.value,
+    "VERSION"                -> (ThisBuild / version).value,
+    "WEBPAGE_URL"            -> "https://www.weso.es/rdfshape-api/",
+    "API_URL"                -> "https://api.rdfshape.weso.es",
+    "API_CONTAINER_REGISTRY" -> "https://github.com/orgs/weso/packages/container/package/rdfshape-api",
+    "CLIENT_NAME"            -> "RDFShape Client",
+    "CLIENT_REPO"            -> "https://github.com/weso/rdfshape-client/",
+    "CLIENT_URL"             -> "https://rdfshape.weso.es/",
+    "WESOLOCAL_URL"          -> "https://github.com/weso/wesolocal/wiki/RDFShape"
+  ),
+  /* When creating/publishing the docusaurus site, update the dynamic mdoc and
+   * the static scaladoc first */
+  docusaurusCreateSite := docusaurusCreateSite
+    .dependsOn(Compile / unidoc)
+    .value,
+  docusaurusPublishGhpages :=
+    docusaurusPublishGhpages
+      .dependsOn(Compile / unidoc)
+      .value
+)
 
-lazy val any23_core = "org.apache.any23" % "apache-any23-core" % any23Version
-lazy val any23_api  = "org.apache.any23" % "apache-any23-api"  % any23Version
-lazy val any23_scraper =
-  "org.apache.any23.plugins" % "apache-any23-html-scraper" % "2.2"
-lazy val rdf4j_runtime = "org.eclipse.rdf4j" % "rdf4j-runtime" % rdf4jVersion
+// Unidoc settings, mirroring scaladoc settings
+lazy val unidocSettings: Seq[Def.Setting[_]] = Seq(
+  // Generate docs for the root project and the server module
+  ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(rdfshape, server),
+  // Dump docs into the website static part, to link them with docusaurus
+  ScalaUnidoc / unidoc / target := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
+  // When cleaning, remove unidoc generated docs as well
+  cleanFiles += (ScalaUnidoc / unidoc / target).value,
+  // Scalac options
+  ScalaUnidoc / unidoc / scalacOptions ++= Seq(
+    // Base source path
+    "-sourcepath",
+    (LocalRootProject / baseDirectory).value.getAbsolutePath,
+    // Link to GitHub source
+    "-doc-source-url",
+    scmInfo.value.get.browseUrl + "/tree/master€{FILE_PATH}.scala",
+    // Page title
+    "-doc-title",
+    "RDFShape API - Docs",
+    // Docs version
+    "-doc-version",
+    version.value,
+    // Docs footer
+    "-doc-footer",
+    "WESO Research Group - University of Oviedo",
+    // Skip unnecessary source
+    "-skip-packages",
+    "org:buildinfo",
+    // Other settings
+    "-diagrams",
+    "-implicits",
+    "-private"
+  )
+)
 
-lazy val scalaj = "org.scalaj"        %% "scalaj-http" % scalajVersion
-lazy val play   = "com.typesafe.play" %% "play-json"   % playVersion
+// Shared publish settings for all modules.
+lazy val publishSettings = Seq(
+  organization := "es.weso",
+  sonatypeProfileName := "es.weso",
+  maintainer := "info@weso.es",
+  homepage := Some(url("https://github.com/weso/rdfshape-api")),
+  licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT")),
+  scmInfo := Some(
+    ScmInfo(
+      url("https://github.com/weso/rdfshape-api"),
+      "scm:git:git@github.com:weso/rdfshape-api.git"
+    )
+  ),
+  pomExtra := <developers>
+    <developer>
+      <id>WESO</id>
+      <name>WESO Research Group</name>
+      <url>https://github.com/weso</url>
+    </developer>
+    <developer>
+      <id>labra</id>
+      <name>Jose Emilio Labra Gayo</name>
+      <url>http://www.example.com/jdoe</url>
+      <organization>WESO</organization>
+      <organizationUrl>https://github.com/weso</organizationUrl>
+    </developer>
+    <developer>
+      <id>ulitol</id>
+      <name>Eduardo Ulibarri Toledo</name>
+      <url>http://www.example.com/jdoe</url>
+      <organization>WESO</organization>
+      <organizationUrl>https://github.com/weso</organizationUrl>
+    </developer>
+  </developers>,
+  publishMavenStyle := true // generate POM, not ivy
+)
 
-lazy val jquery    = "org.webjars" % "jquery"    % jqueryVersion
-lazy val bootstrap = "org.webjars" % "bootstrap" % bootstrapVersion
+// Aggregate resolver settings passed down to modules to resolve dependencies
+// Helper to resolve dependencies from GitHub packages
+lazy val resolverSettings = Seq(
+  resolvers ++= Seq(
+    Resolver.DefaultMavenRepository,
+    Resolver.sonatypeRepo("snapshots")
+  )
+)
 
-lazy val mongodb = "org.mongodb.scala" %% "mongo-scala-driver" % mongodbVersion
+// Shared settings for the BuildInfo Plugin
+// See https://github.com/sbt/sbt-buildinfo
+lazy val buildInfoSettings = Seq(
+  buildInfoKeys := Seq[BuildInfoKey](
+    name,
+    packageName,
+    version,
+    scalaVersion,
+    sbtVersion,
+    apiURL
+  ),
+  buildInfoPackage := "buildinfo",
+  buildInfoObject := "BuildInfo"
+)
 
-// Compiler plugin modules
-/* lazy val scalaMacrosParadise = "org.scalamacros" % "paradise" %
- * scalaMacrosVersion cross CrossVersion.full */
-/* lazy val simulacrum = "com.github.mpilquist" %% "simulacrum" %
- * simulacrumVersion */
-/* lazy val kindProjector = "org.spire-math" %% "kind-projector" %
- * kindProjectorVersion */
+lazy val noPublishSettings = publish / skip := true
 
-lazy val MUnitFramework = new TestFramework("munit.Framework")
+/* ------------------------------------------------------------------------- */
 
-ThisBuild / githubWorkflowJavaVersions := Seq(Java11)
-ThisBuild / githubOwner := "weso"
-ThisBuild / githubRepository := "shaclex"
-
+/* PROJECT and MODULE settings */
+// Root project: rdfshape
 lazy val rdfshape = project
   .in(file("."))
+  .aggregate(server, docs)
+  .dependsOn(server)
   .enablePlugins(
-    ScalaUnidocPlugin,
-    SiteScaladocPlugin,
-    AsciidoctorPlugin,
+    BuildInfoPlugin,
     SbtNativePackager,
-    WindowsPlugin,
-    JavaAppPackaging,
-    DockerPlugin
+    JavaAppPackaging
   )
   .disablePlugins(RevolverPlugin)
-  .aggregate(server)
-  .dependsOn(server)
   .settings(
-    dockerExposedPorts ++= Seq(80),
-    ScalaUnidoc / siteSubdirName := "scaladoc/latest",
-    addMappingsToSiteDir(
-      ScalaUnidoc / packageDoc / mappings,
-      ScalaUnidoc / siteSubdirName
-    ),
-    ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(
-      noDocProjects: _*
-    ),
-    makeSite / mappings ++= Seq(
-      file("src/assets/favicon.ico") -> "favicon.ico"
-    ),
+    // Pre-existing settings
+    compilationSettings,
+    packagingSettings,
+    publishSettings,
+    resolverSettings,
+    scaladocSettings,
+    sharedDependencies,
+    buildInfoSettings,
+    // Custom settings
+    name := (Global / packageName).value,
+    moduleName := (Global / packageName).value,
+    run / fork := true,
+    trapExit := false,
+    reStartArgs := Seq("--server"),
+    crossScalaVersions := Nil,
     libraryDependencies ++= Seq(
       logbackClassic,
-      scalaLogging
-      // scallop,
-      /* compilerPlugin("com.github.ghik" %% "silencer-plugin" %
-       * silencerVersion), */
-      // "com.github.ghik" %% "silencer-lib" % silencerVersion % Provided
-    ),
-    cancelable in Global := true,
-    fork := true,
-    reStartArgs := Seq("--server"),
-    crossScalaVersions := supportedScalaVersions
-    // parallelExecution in Test := false
+      scalaLogging,
+      groovy
+    )
   )
-  .settings(commonSettings, packagingSettings, publishSettings, ghPagesSettings)
 
+// Server project in /modules: server
 lazy val server = project
   .in(file("modules/server"))
-  .enablePlugins(SbtTwirl, BuildInfoPlugin)
-  .settings(commonSettings, publishSettings)
   .settings(
-    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
-    buildInfoPackage := "es.weso.rdfshape.buildinfo"
-  )
-  .settings(
+    // Pre-existing settings
+    compilationSettings,
+    publishSettings,
+    resolverSettings,
+    scaladocSettings,
+    sharedDependencies,
+    // Custom settings
+    name := s"${(Global / packageName).value}-server",
+    moduleName := s"${(Global / packageName).value}-server",
+    run / fork := false,
+    testFrameworks += MUnitFramework,
+    crossScalaVersions := supportedScalaVersions,
     libraryDependencies ++= Seq(
       http4sDsl,
       http4sBlazeServer,
       http4sBlazeClient,
       http4sEmberClient,
       http4sCirce,
-      http4sTwirl,
       scalatags,
-      // selenium,
       umlShaclex,
-      wikibaserdf,
+      shaclex,
       any23_core,
       any23_api,
       any23_scraper,
@@ -177,122 +283,87 @@ lazy val server = project
       plantuml,
       graphvizJava,
       scalaj,
-      play,
-      utilsTest   % Test,
+      wesoUtils   % Test,
       munitEffect % Test,
-      mongodb,
-      // webJars
-      jquery,
-      bootstrap
-    ),
-    testFrameworks += MUnitFramework,
-    crossScalaVersions := supportedScalaVersions
+      mongodb
+    )
   )
 
-/* ******************************************************** Grouped Settings
- * ******************** */
-
-lazy val noDocProjects = Seq[ProjectReference]()
-
-lazy val noPublishSettings = Seq(
-  //  publish := (),
-  //  publishLocal := (),
-  publishArtifact := false
-)
-
-lazy val sharedDependencies = Seq(
-  libraryDependencies ++= Seq(
-//    scalactic,
-//    scalaTest % Test
+// Documentation project, for MDoc + Docusaurus documentation
+lazy val docs = project
+  .in(file("rdfshape-docs"))
+  .dependsOn()
+  .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
+  .settings(
+    // Pre-existing settings
+    unidocSettings,
+    mdocSettings,
+    noPublishSettings,
+    // Custom settings
+    name := s"${(Global / packageName).value}-api-docs",
+    moduleName := s"${(Global / packageName).value}-api-docs"
   )
-)
 
-lazy val packagingSettings = Seq(
-  Compile / mainClass := Some("es.weso.rdfshape.Main"),
-  assembly / mainClass := Some("es.weso.rdfshape.Main"),
-  assembly / test := {},
-  assembly / assemblyJarName := "rdfshape.jar",
-  Linux / packageSummary := name.value,
-  Windows / packageSummary := name.value,
-  packageDescription := name.value
-)
+lazy val MUnitFramework = new TestFramework("munit.Framework")
 
-lazy val compilationSettings = Seq(
-  // scalaVersion := "2.12.11",
-  // format: off
-  scalacOptions ++= Seq(
-    "-deprecation",                      // Emit warning and location for usages of deprecated APIs.
-    "-encoding", "utf-8",                // Specify character encoding used by source files.
-    "-explaintypes",                     // Explain type errors in more detail.
-    "-feature",                          // Emit warning and location for usages of features that should be imported explicitly.  "-encoding", "UTF-8",
-    "-language:_",
-    "-unchecked",                        // Enable additional warnings where generated code depends on assumptions.
-    //    "-Xfuture",                          // Turn on future language features.
-    //    "-Xlint",
-    "-Yrangepos",
-    //    "-Ylog-classpath",
-    //    "-Yno-adapted-args",                 // Do not adapt an argument list (either by inserting () or creating a tuple) to match the receiver
-    //    "-Ywarn-dead-code",                  // Warn when dead code is identified.
-    //    "-Ywarn-extra-implicit",             // Warn when more than one implicit parameter section is defined.
-    //    "-Ywarn-inaccessible",               // Warn about inaccessible types in method signatures.
-    //    "-Ywarn-infer-any",                  // Warn when a type argument is inferred to be `Any`.
-    //    "-Ywarn-nullary-override",           // Warn when non-nullary `def f()' overrides nullary `def f'.
-    //    "-Ywarn-nullary-unit",               // Warn when nullary methods return Unit.
-    //    "-Ywarn-numeric-widen",              // Warn when numerics are widened.
-    //    "-Ywarn-unused:implicits",           // Warn if an implicit parameter is unused.
-    //    "-Ywarn-unused:imports",             // Warn if an import selector is not referenced.
-    //    "-Ywarn-unused:locals",              // Warn if a local definition is unused.
-    //    "-Ywarn-unused:params",              // Warn if a value parameter is unused.
-    //    "-Ywarn-unused:patvars",             // Warn if a variable bound in a pattern is unused.
-    //    "-Ywarn-unused:privates",            // Warn if a private member is unused.
-    //    "-Ywarn-value-discard",              // Warn when non-Unit expression results are unused.
-    //    "-Xfatal-warnings",                  // Fail the compilation if there are any warnings.
-    //    "-Ypartial-unification",
-  )
-)
+/* ------------------------------------------------------------------------- */
 
-lazy val ghPagesSettings = Seq(
-  git.remoteRepo := "git@github.com:labra/rdfshape.git"
-)
+/* DEPENDENCY versions */
+lazy val http4sVersion       = "1.0.0-M21"
+lazy val catsVersion         = "2.5.0"
+lazy val mongodbVersion      = "4.1.1"
+lazy val any23Version        = "2.2"
+lazy val rdf4jVersion        = "2.2.4"
+lazy val graphvizJavaVersion = "0.5.2"
+lazy val logbackVersion      = "1.2.3"
+lazy val loggingVersion      = "3.9.3"
+lazy val groovyVersion       = "3.0.8"
+lazy val munitVersion        = "0.7.23"
+lazy val munitEffectVersion  = "1.0.2"
+lazy val plantumlVersion     = "1.2021.5"
+lazy val scalajVersion       = "2.4.2"
+lazy val scalatagsVersion    = "0.7.0"
+// WESO dependencies
+lazy val shaclexVersion    = "0.1.91"
+lazy val umlShaclexVersion = "0.0.82"
+lazy val wesoUtilsVersion  = "0.1.98"
 
-lazy val commonSettings = compilationSettings ++ sharedDependencies ++ Seq(
-  organization := "es.weso",
-  resolvers ++= Seq(
-    Resolver.githubPackages("weso"),
-    Resolver.sonatypeRepo("snapshots")
-  )
-)
+// Dependency modules
+lazy val http4sDsl = "org.http4s" %% "http4s-dsl" % http4sVersion
+lazy val http4sBlazeServer =
+  "org.http4s" %% "http4s-blaze-server" % http4sVersion
+lazy val http4sBlazeClient =
+  "org.http4s" %% "http4s-blaze-client" % http4sVersion
+lazy val http4sEmberClient =
+  "org.http4s" %% "http4s-ember-client" % http4sVersion
+lazy val http4sCirce = "org.http4s" %% "http4s-circe" % http4sVersion
 
-lazy val publishSettings = Seq(
-  homepage        := Some(url("https://github.com/labra/rdfshape")),
-  licenses        := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
-  scmInfo         := Some(ScmInfo(url("https://github.com/labra/rdfshape"), "scm:git:git@github.com:labra/rdfshape.git")),
-  autoAPIMappings := true,
-  apiURL          := Some(url("http://labra.github.io/rdfshape/latest/api/")),
-  pomExtra        := <developers>
-    <developer>
-      <id>labra</id>
-      <name>Jose Emilio Labra Gayo</name>
-      <url>https://github.com/labra/</url>
-    </developer>
-  </developers>,
-  doc / scalacOptions  ++= Seq(
-    "-diagrams-debug",
-    "-doc-source-url",
-    scmInfo.value.get.browseUrl + "/tree/master€{FILE_PATH}.scala",
-    "-sourcepath",
-    (LocalRootProject / baseDirectory).value.getAbsolutePath,
-    "-diagrams",
-  ),
-  publishMavenStyle              := true,
-  maintainer:= "labra@uniovi.es, uo251436@uniovi.es",
-  
-  // publish as zip
-  Universal / packageName := "rdfshape"
-)
+lazy val catsCore   = "org.typelevel" %% "cats-core"   % catsVersion
+lazy val catsKernel = "org.typelevel" %% "cats-kernel" % catsVersion
 
-// Github token to be used by sbt-github-actions
-githubTokenSource := TokenSource.Or(
-  TokenSource.Environment("GITHUB_TOKEN"), // Injected during a github workflow for publishing
-  TokenSource.Environment("SHELL")  // safe to assume this will be set in dev environments
-)
+lazy val mongodb = "org.mongodb.scala" %% "mongo-scala-driver" % mongodbVersion
+
+lazy val any23_core = "org.apache.any23" % "apache-any23-core" % any23Version
+lazy val any23_api  = "org.apache.any23" % "apache-any23-api"  % any23Version
+lazy val any23_scraper =
+  "org.apache.any23.plugins" % "apache-any23-html-scraper" % "2.2"
+
+lazy val rdf4j_runtime = "org.eclipse.rdf4j"        % "rdf4j-runtime" % rdf4jVersion
+lazy val graphvizJava  = "guru.nidi"                % "graphviz-java" % graphvizJavaVersion
+lazy val plantuml      = "net.sourceforge.plantuml" % "plantuml"      % plantumlVersion
+
+lazy val logbackClassic = "ch.qos.logback" % "logback-classic" % logbackVersion
+lazy val scalaLogging =
+  "com.typesafe.scala-logging" %% "scala-logging" % loggingVersion
+lazy val groovy = "org.codehaus.groovy" % "groovy" % groovyVersion
+
+lazy val munit = "org.scalameta" %% "munit" % munitVersion
+lazy val munitEffect =
+  "org.typelevel" %% "munit-cats-effect-3" % munitEffectVersion
+
+lazy val scalaj    = "org.scalaj"  %% "scalaj-http" % scalajVersion
+lazy val scalatags = "com.lihaoyi" %% "scalatags"   % scalatagsVersion
+// WESO dependencies
+lazy val shaclex    = "es.weso" %% "shexs"      % shaclexVersion
+lazy val umlShaclex = "es.weso" %% "umlshaclex" % umlShaclexVersion
+lazy val wesoUtils  = "es.weso" %% "utilstest"  % wesoUtilsVersion
